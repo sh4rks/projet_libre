@@ -188,8 +188,23 @@ public class Calcul {
 			ptemp=p;
 			qtemp=q;
 			
-			p=(1-2*qtemp)/(8*(1-Math.pow(2*qtemp, 7))*(1-qtemp));
-			q=1 - Math.pow(1-ptemp, N);
+			q=1 - Math.pow(1-p, N-1);
+			
+			double temp = 0;
+			
+			for(int i=0;i<7;i++){
+				temp+=Math.pow(2*q, i);
+			}
+			p=temp*16.0;
+			
+			/*p=16.0*(1-Math.pow(2*q, 7));
+			p=p/(1-2*q);*/
+			
+			p--;
+			p/=2;
+			p++;
+			p=1/p;
+			
 		}while(Math.abs(q-qtemp)>0.001 || Math.abs(p-ptemp)>0.001);
 		
 		double[] toReturn=new double [2];

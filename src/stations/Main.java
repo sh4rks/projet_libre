@@ -1,18 +1,13 @@
 package stations;
 
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.lang.String;
 
-import org.apache.poi.xssf.usermodel.XSSFCell;
-import org.apache.poi.xssf.usermodel.XSSFSheet;
-import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+
+import excel.Gestion_excel;
 
 
 public class Main {
@@ -35,6 +30,7 @@ public class Main {
 	static double time_max_data = Double.MAX_VALUE;
 	private static boolean full_optimized=false;
 	private static boolean adaptatif=false;
+	public static int colum=3;
 
 	public static void main(String[] args) throws IOException {
 
@@ -132,8 +128,10 @@ public class Main {
 			nb_fragment=10;
 		}
 		in.close();
+
 		time_max_data =Calcul.calculer_transmission(1500*8.0/nb_fragment,1.0,false,false)[0];
-		
+
+
 		/* double[] to_write_excel=new double[12];
 		 double[] temp=calculer_transmission(1500*8,12.0,false,false);
 		 to_write_excel[4]=temp[0];
@@ -202,7 +200,7 @@ public class Main {
 
 		ArrayList<Station> stations = new ArrayList<Station>();
 
-		for(int i=0;i<nb_stations_54;i++){
+		/*for(int i=0;i<nb_stations_54;i++){
 
 			stations.add(new Station(54.0,ratio_data_total));
 
@@ -213,16 +211,24 @@ public class Main {
 
 			stations.add(new Station(1.0,ratio_data_total));
 
-		}
+		}*/
 
 		/*---------------------------------------------------------------------------------------------------------------------*/
 
 
 		/*---------------------------------Simulation--------------------------------------------------------------------------*/
-		simulation(stations,true); // simulation mode optimisé
-		/*simulation(stations,false); // simulation mode normal
-		full_optimized=true;
-		simulation(stations,true); // simulation mode optimisé*/
+		for (int i=0;i<10;i++){
+			stations.add(new Station(54.0,ratio_data_total));
+			stations.add(new Station(1.0,ratio_data_total));
+			Main.nb_stations=2*(i+1);
+			Main.nb_stations_54=i+1;
+			simulation(stations,true); // simulation mode optimisé
+			simulation(stations,false); // simulation mode normal
+			full_optimized=true;
+			simulation(stations,true); // simulation mode optimisé*/
+			full_optimized=false;
+			colum++;
+		}
 
 
 
@@ -330,7 +336,7 @@ public class Main {
 							stations_emettrices.add(i); 
 						}
 
-						
+
 					}
 				}
 
@@ -370,7 +376,7 @@ public class Main {
 								stations.get(i).ajouter_temps((min_backoff*time_slot)/(1000000.0));
 							stations.get(i).decompter_backoff(min_backoff);
 
-							
+
 						}
 					}
 
@@ -383,7 +389,7 @@ public class Main {
 
 					station_emettrice=stations.get(stations_emettrices.get(0));
 					station_emettrice.new_backoff();
-					
+
 
 
 					data_remained= station_emettrice.getData_remained();  // on regarde la quantité de donnees du paquezt restante à envoyer
@@ -426,12 +432,12 @@ public class Main {
 					if(debit==54){
 						access_canal_54++;
 						data_54+=data_transmitted/8.0;
-						time_54+=temp[2]/(1000000.0);
+						time_54+=temp[0]/(1000000.0);
 					}
 					else{
 						access_canal_1++;
 						data_1+=data_transmitted/8.0;
-						time_1+=temp[2]/(1000000.0);
+						time_1+=temp[0]/(1000000.0);
 					}
 
 					if(Main.data_limited){
@@ -455,7 +461,7 @@ public class Main {
 
 						station_emettrice=stations.get(stations_emettrices.get(i));
 
-				
+
 						/*----------------- on calcul le temps maximal qui aurait été pris lors de cette collision-------------*/
 						double time_collision_temp=Calcul.calculer_transmission(station_emettrice.getData_remained(), station_emettrice.getDebit(), optimized,false)[0];
 						//time_ack= Main.calculer_transmission(0, station_emettrice.getDebit(), optimized,true)[0];
@@ -611,7 +617,7 @@ public class Main {
 		cwmoy_toprint = Math.round(cwmoy_toprint * Math.pow(10,3)) / Math.pow(10,3);
 		/*---------------------------------------------------------------------------------------------------------*/
 
-		
+
 		/*double [] t_cons = Calcul.real_cons(proba_send_packets,proba_colisions,Main.nb_stations-1);
 		proba_colisions=t_cons[1];
 		proba_send_packets=t_cons[0];
@@ -664,57 +670,82 @@ public class Main {
 		/*---------------------------------------------------------------------------------------------------------*/
 
 		Calcul.initialized_facTab(Main.nb_stations);
+
+
+		Gestion_excel.create("C:\\Users\\Toni\\Dropbox\\R�seau\\projet libre\\copie.xlsx");
+		if(!optimized && !full_optimized){
+			Gestion_excel.ecrire_cellule(0,8,3,moyenne_Throughputwooh_54);
+
+			Gestion_excel.ecrire_cellule(0,8,4,moyenne_Throughputwooh_1);
+
+			Gestion_excel.ecrire_cellule(4,13,colum,moyenne_Throughputwooh_54);
+			Gestion_excel.ecrire_cellule(4,7,colum,moyenne_Throughputwooh_1);
+		}
+		if(optimized && full_optimized){
+			Gestion_excel.ecrire_cellule(0,6,3,moyenne_Throughputwooh_54);
+			Gestion_excel.ecrire_cellule(0,6,4,moyenne_Throughputwooh_1);
+
+			Gestion_excel.ecrire_cellule(4,5,colum,moyenne_Throughputwooh_1);
+			Gestion_excel.ecrire_cellule(4,11,colum,moyenne_Throughputwooh_54);
+
+		}
 		if(optimized && !full_optimized){
 
-			//String s = new String("C:\\Users\\Toni\\Dropbox\\R�seau\\projet libre\\calculs - copie.xlsx");
-			try {
-			    FileInputStream file = new FileInputStream(new File("C:\\Users\\Toni\\Dropbox\\R�seau\\projet libre\\copie.xlsx"));
-			 
-			    XSSFWorkbook  workbook = new XSSFWorkbook(file);
-			    XSSFSheet sheet = workbook.getSheetAt(1);
-			    XSSFCell cell = null;
-			 
-			    //Update the value of cell
-			    cell = sheet.getRow(1).getCell(0);
-			    cell.setCellValue(proba_send_packets);
-			    cell = sheet.getRow(1).getCell(1);
-			    cell.setCellValue(proba_colisions);
-			    cell = sheet.getRow(1).getCell(2);
-			    cell.setCellValue(Main.nb_stations_54);
-			    cell = sheet.getRow(1).getCell(3);
-			    cell.setCellValue(Main.nb_stations-Main.nb_stations_54);
-			    
-			    double[] temp=Calcul.p_collision_54(proba_send_packets, Main.nb_stations-Main.nb_stations_54-1, Main.nb_stations_54,2);
-			    cell = sheet.getRow(9).getCell(0);
-			    cell.setCellValue(temp[1]);
-			    cell = sheet.getRow(1).getCell(7);
-			    cell.setCellValue(temp[0]);
-			    cell = sheet.getRow(20).getCell(0);
-			    cell.setCellValue(Calcul.p_collision_54(proba_send_packets, Main.nb_stations-Main.nb_stations_54, Main.nb_stations_54-1,2)[1]);
-			  			    
-			    cell = sheet.getRow(23).getCell(0);
-			    cell.setCellValue(Calcul.p_collision_54(proba_send_packets, Main.nb_stations-Main.nb_stations_54, Main.nb_stations_54-1,1)[1]);
-			 
-			    cell = sheet.getRow(1).getCell(6);
-			    cell.setCellValue(cwmoy_toprint);
-			    // cell.setCellValue(7.5*(1-Math.pow(2*proba_colisions, 7))/(1-2*proba_colisions));
-			    
-			    workbook.getCreationHelper().createFormulaEvaluator().evaluateAll();
-			   
-			    file.close();
-			     
-			    FileOutputStream outFile =new FileOutputStream(new File("C:\\Users\\Toni\\Dropbox\\R�seau\\projet libre\\copie.xlsx"));
-			    workbook.write(outFile);
-			    outFile.close();
-			     
-			} catch (FileNotFoundException e) {
-			    e.printStackTrace();
-			} catch (IOException e) {
-			    e.printStackTrace();
-			}
+
+
+
+
+			//Update the value of cell
+			/*Gestion_excel.ecrire_cellule(1,2,1,proba_send_packets);
+			Gestion_excel.ecrire_cellule(1,2,2,proba_colisions);*/
+			double[] temp=Calcul.real_cons(proba_send_packets, proba_colisions, Main.nb_stations);
+			Gestion_excel.ecrire_cellule(1,2,1,temp[0]);
+			Gestion_excel.ecrire_cellule(1,2,2,temp[1]);
+			Gestion_excel.ecrire_cellule(1,2,7,(1/temp[0])-1);
+
+
+			Gestion_excel.ecrire_cellule(1,2,3,Main.nb_stations_54);
+			Gestion_excel.ecrire_cellule(1,2,4,Main.nb_stations-Main.nb_stations_54);
+
+
+			temp=Calcul.p_collision_54(proba_send_packets, Main.nb_stations-Main.nb_stations_54-1, Main.nb_stations_54,2);
+
+
+			Gestion_excel.ecrire_cellule(1,10,1,temp[1]);
+			Gestion_excel.ecrire_cellule(1,2,8,temp[0]);
+			Gestion_excel.ecrire_cellule(1,21,1,Calcul.p_collision_54(proba_send_packets, Main.nb_stations-Main.nb_stations_54, Main.nb_stations_54-1,2)[1]);
+			Gestion_excel.ecrire_cellule(1,24,1,Calcul.p_collision_54(proba_send_packets, Main.nb_stations-Main.nb_stations_54, Main.nb_stations_54-1,1)[1]);
+
+
+
+			//Gestion_excel.ecrire_cellule(1,2,7,cwmoy_toprint);
+
+
+
+			Gestion_excel.ecrire_cellule(0,4,3,moyenne_Throughputwooh_54);
+
+			Gestion_excel.ecrire_cellule(0,4,4,moyenne_Throughputwooh_1);
+
+			Gestion_excel.ecrire_cellule(4,3,colum,moyenne_Throughputwooh_1);
+			Gestion_excel.ecrire_cellule(4,9,colum,moyenne_Throughputwooh_54);
+
+			Gestion_excel.ecrire_cellule(4,1,colum,Main.nb_stations);
+
+			Gestion_excel.evaluate();
+
+			Gestion_excel.ecrire_cellule(4,2,colum,Gestion_excel.getvalue(0, 3, 4));
+			Gestion_excel.ecrire_cellule(4,8,colum,Gestion_excel.getvalue(0, 3, 3));
+
+			Gestion_excel.ecrire_cellule(4,4,colum,Gestion_excel.getvalue(0, 5, 4));
+			Gestion_excel.ecrire_cellule(4,10,colum,Gestion_excel.getvalue(0, 5, 3));
+
+			Gestion_excel.ecrire_cellule(4,6,colum,Gestion_excel.getvalue(0, 7, 4));
+			Gestion_excel.ecrire_cellule(4,12,colum,Gestion_excel.getvalue(0, 7, 3));
 
 
 		}
+
+		Gestion_excel.close();
 
 
 
@@ -725,7 +756,7 @@ public class Main {
 
 
 
-	
+
 }
 
 
