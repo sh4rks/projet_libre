@@ -1,5 +1,9 @@
 package stations;
 
+import com.wolfram.jlink.KernelLink;
+import com.wolfram.jlink.MathLinkException;
+import com.wolfram.jlink.MathLinkFactory;
+
 public class Calcul {
 
 	private static double[] factTab=null;
@@ -85,7 +89,7 @@ public class Calcul {
 		return toreturn;
 
 	}
-	
+
 	public static double[] retrouver_data(double temps_transmission, double debit){
 		double[] toreturn = new double[4];
 
@@ -130,18 +134,18 @@ public class Calcul {
 
 	private static double factoriel(int i){
 
-			return factTab[i];
-		
+		return factTab[i];
+
 	}
 
 	public static void initialized_facTab(int Max_range){
 		factTab=new double [Max_range+1];
 		factTab[0]=1.0;
 		for (int i=1;i<Max_range+1;i++){
-			
+
 			factTab[i]=i*factTab[i-1];
 		}
-		
+
 	}
 	public static double[] p_collision_54(double p,int N1,int N54,int nb_stations_min){
 		double p_c = 0;
@@ -175,41 +179,57 @@ public class Calcul {
 		return toReturn;
 
 	}
-	
-	public static double[] real_cons(double p, double q, int N){
-		double ptemp=0;
-		double qtemp=0;
-		int cpt=0;
-		
-		do{
-			cpt++;
-			if(cpt>=1000)
-				break;
-			ptemp=p;
-			qtemp=q;
-			
-			q=1 - Math.pow(1-p, N-1);
-			
-			double temp = 0;
-			
-			for(int i=0;i<7;i++){
-				temp+=Math.pow(2*q, i);
-			}
-			p=temp*16.0;
-			
-			/*p=16.0*(1-Math.pow(2*q, 7));
-			p=p/(1-2*q);*/
-			
-			p--;
-			p/=2;
-			p++;
-			p=1/p;
-			
-		}while(Math.abs(q-qtemp)>0.001 || Math.abs(p-ptemp)>0.001);
-		
+
+	public static double[] real_cons(int N){
+
 		double[] toReturn=new double [2];
+		double p=-1;
+		double q=-1;
+		toReturn[0]=p;
+		toReturn[1]=q;
+
+
+		KernelLink ml = null;
+		String[] mathLinkArgs = {"-linkmode", "launch", "-linkname", "C:\\Program Files\\Wolfram Research\\Mathematica\\9.0\\mathkernel"};
+		try {
+			ml = MathLinkFactory.createKernelLink(mathLinkArgs);
+		} catch (MathLinkException e) {
+			System.out.println("Fatal error opening link: " + e.getMessage());
+			return toReturn;
+		}
+
+		try {
+			// Get rid of the initial InputNamePacket the kernel will send
+			// when it is launched.
+			ml.discardAnswer();
+
+
+			
+
+
+			ml.evaluate("Solve[1 - (1 - p)^" +Integer.toString(N-1)+ "== q && p == 1/((((16/(1 - 2*q)) - 1)*0.5) + 1) && 0<p<1 && 0<q<1, {p, q}, Reals]");
+			ml.waitForAnswer();
+			String s=ml.getExpr().toString();
+			String[] tabs= s.split(",");
+			if(tabs.length>1){
+
+				p=Double.parseDouble((tabs[1].split("]")[0]));
+				q=Double.parseDouble((tabs[3].split("]")[0]));
+				
+			}
+
+
+
+		} catch (MathLinkException e) {
+			System.out.println("MathLinkException occurred: " + e.getMessage());
+		} finally {
+			ml.close();
+		}
+
+
 		toReturn[0]=p;
 		toReturn[1]=q;
 		return toReturn;
+
 	}
 }

@@ -698,7 +698,7 @@ public class Main {
 			//Update the value of cell
 			/*Gestion_excel.ecrire_cellule(1,2,1,proba_send_packets);
 			Gestion_excel.ecrire_cellule(1,2,2,proba_colisions);*/
-			double[] temp=Calcul.real_cons(proba_send_packets, proba_colisions, Main.nb_stations);
+			double[] temp=Calcul.real_cons(Main.nb_stations);
 			Gestion_excel.ecrire_cellule(1,2,1,temp[0]);
 			Gestion_excel.ecrire_cellule(1,2,2,temp[1]);
 			Gestion_excel.ecrire_cellule(1,2,7,(1/temp[0])-1);
