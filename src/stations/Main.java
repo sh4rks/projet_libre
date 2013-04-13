@@ -17,19 +17,16 @@ public class Main {
 	 **/
 
 
-	private static final int packet_data_length=1500*8;
 	private static  double ratio_data_total=1; //1=data only  0=voice_only
 	private static   int nb_stations;
 	private static   int nb_stations_54;
 	private static int nb_fragment=12;
-	private static final int Number_iterations=10;
-	private static  boolean time_limited=false;
-	public static  boolean data_limited=false;
+	private static final int Number_iterations=3;
+	private static  boolean time_limited=true;
 	private static  int duree_limite=1000;
 	public  static int nb_packets_limit=100000;
 	static double time_max_data = Double.MAX_VALUE;
 	private static boolean full_optimized=false;
-	private static boolean adaptatif=false;
 	public static int colum=3;
 
 	public static void main(String[] args) throws IOException {
@@ -62,25 +59,19 @@ public class Main {
 
 			nb_stations=nb_stations_54+1;
 		}
-		System.out.print("temps limite (oui ou non)? ");
-		text = in.readLine();
 
-		if(text.equals("non")){
-			time_limited=false;
+
+		System.out.print("\tduree (secondes)? ");
+		text = in.readLine();
+		try{
+			duree_limite=Integer.parseInt(text);
+			if (duree_limite<0)
+				duree_limite=0;
 		}
-		else{
-			time_limited=true;
-			System.out.print("\tduree (secondes)? ");
-			text = in.readLine();
-			try{
-				duree_limite=Integer.parseInt(text);
-				if (duree_limite<0)
-					duree_limite=0;
-			}
-			catch(NumberFormatException e){
-				duree_limite=1000;
-			}
+		catch(NumberFormatException e){
+			duree_limite=1000;
 		}
+
 
 
 		/*System.out.print("nombre de paquets limite (oui ou non)? ");
@@ -132,42 +123,12 @@ public class Main {
 		time_max_data =Calcul.calculer_transmission(1500*8.0/nb_fragment,1.0,false,false)[0];
 
 
-		/* double[] to_write_excel=new double[12];
-		 double[] temp=calculer_transmission(1500*8,12.0,false,false);
-		 to_write_excel[4]=temp[0];
-		 to_write_excel[5]=temp[1];
-		 to_write_excel[6]=temp[2];
-		 to_write_excel[7]=temp[3];
 
-
-		 temp=calculer_transmission(1500*8,1.0,true,false);
-		 to_write_excel[0]=temp[0];
-		 to_write_excel[1]=temp[1];
-		 to_write_excel[2]=temp[2];
-		 to_write_excel[3]=temp[3];
-
-		 temp=calculer_transmission(1500*8,54.0,true,false);
-		 to_write_excel[8]=temp[0];
-		 to_write_excel[9]=temp[1];
-		 to_write_excel[10]=temp[2];
-		 to_write_excel[11]=temp[3];
-
-		 WriteExcel test = new WriteExcel();
-		   test.setOutputFile("c:/lars.xls");
-		   try {
-			test.write(to_write_excel);
-		} catch (WriteException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		 */
 		/*---------------------------------------------------------------------------------------------------------------------*/
 
 
-		/*---------------------------------Verification pour eviter une simulation infinie-------------------------------------*/
 
-		if (time_limited == false && data_limited==false)
-			time_limited=true;
+
 
 
 		/*---------------------------------------------------------------------------------------------------------------------*/
@@ -183,9 +144,6 @@ public class Main {
 		System.out.println("\tTemps limite: "+ (time_limited?"oui":"non"));
 		if(time_limited)
 			System.out.println("\t\tDuree limite: "+ duree_limite +" s");
-		System.out.println("\tData limite: "+ (data_limited?"oui":"non"));
-		if(data_limited)
-			System.out.println("\t\tNb de paquets limite: "+ nb_packets_limit +" paquets");
 		System.out.println("\t"+ratio_data_total*100 +" % des paquets sont des paquets de donnees de taille "+ Station.packet_data_length/8 + " octets");
 		System.out.println("\t"+(Math.round((1-ratio_data_total) * Math.pow(10,4)) / Math.pow(10,2)) +" % des paquets sont des paquets de voix de taille "+ Station.packet_voice_length/8 + " octets");
 		System.out.println();
@@ -217,19 +175,26 @@ public class Main {
 
 
 		/*---------------------------------Simulation--------------------------------------------------------------------------*/
-		for (int i=0;i<10;i++){
+
+		stations.add(new Station(1.0,ratio_data_total));
+		for (int i=0;i<19;i++){
+
+			//stations.add(new Station(1.0,ratio_data_total));
+			//for (int y=0;y<3;y++)
 			stations.add(new Station(54.0,ratio_data_total));
-			stations.add(new Station(1.0,ratio_data_total));
-			Main.nb_stations=2*(i+1);
-			Main.nb_stations_54=i+1;
+
+
+			Main.nb_stations=1+(i+1);
+			Main.nb_stations_54=(i+1);
+
 			simulation(stations,true); // simulation mode optimisÃ©
 			simulation(stations,false); // simulation mode normal
 			full_optimized=true;
-			simulation(stations,true); // simulation mode optimisÃ©*/
+			simulation(stations,true); // simulation mode optimisÃ©
 			full_optimized=false;
 			colum++;
-		}
 
+		}
 
 
 	}
@@ -285,15 +250,12 @@ public class Main {
 		double proba_send_packets=0;
 		double cwmoy_toprint=0;
 		//int i; 
-		int nb_stations_active=0;
 		int cpt_54;
 		int cpt_1;
 
 		int min_backoff;
 		Station station_emettrice;
-		double max_data_rates;
 
-		boolean finish_due_to_data=true;
 		ArrayList<Integer> stations_emettrices=new ArrayList<Integer>();
 
 		for (int m=0;m<Number_iterations;m++){     // on simule plusieurs fois.
@@ -317,20 +279,18 @@ public class Main {
 
 				/*----------------------Decouverte du nombre de stations encore en "jeu" et combien d'entre elle veulent emettre un paquet-----------------------------*/
 
-				nb_stations_active=0;
+
 
 				min_backoff=Integer.MAX_VALUE;
-				max_data_rates=0; //opt
 				stations_emettrices.clear();
 
 				for (int i=0;i<nb_stations;i++){
 
 					if(stations.get(i).getNb_packets()>0 ){
 
-						nb_stations_active++;
+
 						min_backoff=Math.min(stations.get(i).getBackoff(), min_backoff);
-						/*if(optimized && adaptatif)
-							max_data_rates=Math.min(debit_min_one_packet_one_shot,Math.max(max_data_rates,stations.get(i).getDebit() ));//opt*/
+
 						if(stations.get(i).getBackoff()==0){
 
 							stations_emettrices.add(i); 
@@ -340,28 +300,17 @@ public class Main {
 					}
 				}
 
-				//opt
 
-				if(optimized && adaptatif)
-					time_max_data =Calcul.calculer_transmission(packet_data_length,max_data_rates,false,false)[0];
-
-				//opt
 
 
 				/*----------------------Detection fin de simulation------------------------------------*/
 
 				if (time_limited){
 					if (time>=duree_limite){
-						finish_due_to_data=false;
 						break;
 					}
 				}
-				if(data_limited){
-					if(nb_stations_active==0){
-						finish_due_to_data=true;
-						break;
-					}
-				}
+
 
 				/*----------------------Detection d'un "tour"------------------------------------*/
 
@@ -372,8 +321,6 @@ public class Main {
 
 					for (int i=0;i<nb_stations;i++){
 						if(stations.get(i).getNb_packets()>0){
-							if(Main.data_limited)
-								stations.get(i).ajouter_temps((min_backoff*time_slot)/(1000000.0));
 							stations.get(i).decompter_backoff(min_backoff);
 
 
@@ -412,7 +359,7 @@ public class Main {
 							transmission_time=temp[0];
 						}
 						else{
-							temp=Calcul.calculer_transmission(data_remained, debit, optimized,false);
+							temp=Calcul.calculer_transmission(station_emettrice.getData_remained(), debit, optimized,false);
 							transmission_time=temp[0];
 							data_transmitted = (int)temp[1];
 						}
@@ -440,13 +387,7 @@ public class Main {
 						time_1+=temp[0]/(1000000.0);
 					}
 
-					if(Main.data_limited){
-						for (int h=0;h<nb_stations;h++){
-							stations.get(h).ajouter_temps((transmission_time)/(1000000.0));
 
-
-						}
-					}
 					/*---------------------------------------------------------------------------------------------------*/
 
 
@@ -463,7 +404,25 @@ public class Main {
 
 
 						/*----------------- on calcul le temps maximal qui aurait Ã©tÃ© pris lors de cette collision-------------*/
-						double time_collision_temp=Calcul.calculer_transmission(station_emettrice.getData_remained(), station_emettrice.getDebit(), optimized,false)[0];
+
+						double time_collision_temp;
+						debit = station_emettrice.getDebit();
+						if (full_optimized){
+							if(debit==54){
+								int data_transmitted=(int)((Calcul.retrouver_data(Main.time_max_data, debit)[1]/8.0)/1500);
+								data_transmitted*=1500*8;
+								time_collision_temp=Calcul.calculer_transmission(data_transmitted,debit, optimized,false)[0];
+
+							}
+							else{
+								time_collision_temp=Calcul.calculer_transmission(station_emettrice.getData_remained(),debit, optimized,false)[0];
+
+							}
+						}
+						else{
+							time_collision_temp=Calcul.calculer_transmission(station_emettrice.getData_remained(), debit, optimized,false)[0];
+						}
+
 						//time_ack= Main.calculer_transmission(0, station_emettrice.getDebit(), optimized,true)[0];
 
 						time_collision=Math.max(time_collision, time_collision_temp);
@@ -480,17 +439,7 @@ public class Main {
 
 					/*----------------- -----------------------------------------------------------------------------------*/
 
-					if(Main.data_limited){
-						for (int i=0;i<nb_stations;i++){
 
-							if(stations.get(i).getNb_packets()>0){
-
-
-								stations.get(i).ajouter_temps((time_collision)/(1000000.0));
-
-							}
-						}
-					}
 
 
 
@@ -618,12 +567,9 @@ public class Main {
 		/*---------------------------------------------------------------------------------------------------------*/
 
 
-		/*double [] t_cons = Calcul.real_cons(proba_send_packets,proba_colisions,Main.nb_stations-1);
-		proba_colisions=t_cons[1];
-		proba_send_packets=t_cons[0];
-		System.out.println("ok");*/
+
 		/*--------------------------------------Affichage rÃ©sultat---------------------------------------*/
-		if (optimized)
+		/*if (optimized)
 			if(adaptatif)
 				System.out.println("Mode Optimise adaptatif\n");
 
@@ -636,41 +582,43 @@ public class Main {
 		else
 			System.out.println("Mode normal\n");
 
-		if(Main.nb_stations_54>0){
-			System.out.println("\t les stations 54 Mbps:");
-			System.out.println("\t\tThroughput with overhead : " + moyenne_Throughputwoh_54 +" Mbps");
-			System.out.println("\t\tThroughput without overhead : " + moyenne_Throughputwooh_54 +" Mbps");
-			System.out.println("\t\tData sent: " + moy_data_54 +" MB");
-			System.out.println("\t\tRatio data: " + moyenne_ratio_data_54 +" %");
-			System.out.println("\t\tAcces au canal: "+ moy_access_canal_54 +" %");
-			System.out.println("\t\tTemps ecoule sur le canal a envoyer des donnees (entete comprises, collisions non comprises): "+ moy_time_54 +" s");
-			if(finish_due_to_data)
-				System.out.println("\t\tDuree moyenne au bout de laquelle l'ensemble des paquets ont ete emis par les stations: "+ moy_time_to_send_frames_54 + " s");
-			System.out.println("\t\tTemps total (entete comprises, collisions comprises): "+ moy_time + " s");
-			System.out.println();
-		}
-		if((Main.nb_stations-Main.nb_stations_54)>0){
-			System.out.println("\t les stations 1 Mbps:");
-			System.out.println("\t\tThroughput with overhead  : " + moyenne_Throughputwoh_1 +" Mbps");
-			System.out.println("\t\tThroughput without overhead : " + moyenne_Throughputwooh_1 +" Mbps");
-			System.out.println("\t\tData sent: " + moy_data_1 +" MB");
-			System.out.println("\t\tRatio data: " + moyenne_ratio_data_1 +" %");
-			System.out.println("\t\tAcces au canal: "+ moy_access_canal_1 +" %");
-			System.out.println("\t\tTemps ecoule sur le canal a envoyer des donnees (entete comprises, collisions non comprises): "+ moy_time_1 +" s");
-			if(finish_due_to_data)
-				System.out.println("\t\tDuree moyenne au bout de laquelle l'ensemble des paquets ont ete emis par les stations: "+ moy_time_to_send_frames_1 + " s");
-			System.out.println("\t\tTemps total (entete comprises, collisions comprises): "+ moy_time + " s");
-			System.out.println();
-		}
-		System.out.println("Probabilité d'émission: " + proba_send_packets);
-		System.out.println("Probabilité de colisions: " + proba_colisions);
-		System.out.println(cwmoy_toprint);
-		System.out.println("\n");
 
+			if(Main.nb_stations_54>0){
+				System.out.println("\t les stations 54 Mbps:");
+				System.out.println("\t\tThroughput with overhead : " + moyenne_Throughputwoh_54 +" Mbps");
+				System.out.println("\t\tThroughput without overhead : " + moyenne_Throughputwooh_54 +" Mbps");
+				System.out.println("\t\tData sent: " + moy_data_54 +" MB");
+				System.out.println("\t\tRatio data: " + moyenne_ratio_data_54 +" %");
+				System.out.println("\t\tAcces au canal: "+ moy_access_canal_54 +" %");
+				System.out.println("\t\tTemps ecoule sur le canal a envoyer des donnees (entete comprises, collisions non comprises): "+ moy_time_54 +" s");
+				if(finish_due_to_data)
+					System.out.println("\t\tDuree moyenne au bout de laquelle l'ensemble des paquets ont ete emis par les stations: "+ moy_time_to_send_frames_54 + " s");
+				System.out.println("\t\tTemps total (entete comprises, collisions comprises): "+ moy_time + " s");
+				System.out.println();
+			}
+			if((Main.nb_stations-Main.nb_stations_54)>0){
+				System.out.println("\t les stations 1 Mbps:");
+				System.out.println("\t\tThroughput with overhead  : " + moyenne_Throughputwoh_1 +" Mbps");
+				System.out.println("\t\tThroughput without overhead : " + moyenne_Throughputwooh_1 +" Mbps");
+				System.out.println("\t\tData sent: " + moy_data_1 +" MB");
+				System.out.println("\t\tRatio data: " + moyenne_ratio_data_1 +" %");
+				System.out.println("\t\tAcces au canal: "+ moy_access_canal_1 +" %");
+				System.out.println("\t\tTemps ecoule sur le canal a envoyer des donnees (entete comprises, collisions non comprises): "+ moy_time_1 +" s");
+				if(finish_due_to_data)
+					System.out.println("\t\tDuree moyenne au bout de laquelle l'ensemble des paquets ont ete emis par les stations: "+ moy_time_to_send_frames_1 + " s");
+				System.out.println("\t\tTemps total (entete comprises, collisions comprises): "+ moy_time + " s");
+				System.out.println();
+			}
+			System.out.println("Probabilité d'émission: " + proba_send_packets);
+			System.out.println("Probabilité de colisions: " + proba_colisions);
+			System.out.println(cwmoy_toprint);
+			System.out.println("\n");
+
+		 */ 
 		/*---------------------------------------------------------------------------------------------------------*/
 
 		Calcul.initialized_facTab(Main.nb_stations);
-
+		double ratio_sta_54 = (double)Main.nb_stations_54/(double)Main.nb_stations;
 
 		Gestion_excel.create("C:\\Users\\Toni\\Dropbox\\Réseau\\projet libre\\copie.xlsx");
 		if(!optimized && !full_optimized){
@@ -680,6 +628,10 @@ public class Main {
 
 			Gestion_excel.ecrire_cellule(4,13,colum,moyenne_Throughputwooh_54);
 			Gestion_excel.ecrire_cellule(4,7,colum,moyenne_Throughputwooh_1);
+
+			Gestion_excel.ecrire_cellule(4,21,colum,(moy_time_54+moy_time_1)/moy_time);
+			Gestion_excel.ecrire_cellule(4,22,colum,((1-ratio_sta_54)*(Calcul.calculer_transmission(1500*8.0,1.0,optimized,false)[0]) + ratio_sta_54*(Calcul.calculer_transmission(1500*8.0,54.0,optimized,false)[0]))/20.0);
+
 		}
 		if(optimized && full_optimized){
 			Gestion_excel.ecrire_cellule(0,6,3,moyenne_Throughputwooh_54);
@@ -687,34 +639,36 @@ public class Main {
 
 			Gestion_excel.ecrire_cellule(4,5,colum,moyenne_Throughputwooh_1);
 			Gestion_excel.ecrire_cellule(4,11,colum,moyenne_Throughputwooh_54);
+			Gestion_excel.ecrire_cellule(4,18,colum,(moy_time_54+moy_time_1)/moy_time);
+
+			Gestion_excel.ecrire_cellule(4,19,colum,((1-ratio_sta_54)*(Calcul.calculer_transmission(1500*8.0,1.0,optimized,false)[0]) + ratio_sta_54*(Calcul.calculer_transmission(1500*8.0*8.0,54.0,optimized,false)[0]))/20.0);
 
 		}
 		if(optimized && !full_optimized){
 
+			Gestion_excel.ecrire_cellule(4,15,colum,(moy_time_54+moy_time_1)/moy_time);
 
+			Gestion_excel.ecrire_cellule(4,16,colum,((1-ratio_sta_54)*(Calcul.calculer_transmission(1500*8.0,1.0,optimized,false)[0]) + ratio_sta_54*(Calcul.calculer_transmission(1500*8.0,54.0,optimized,false)[0]))/20.0);
 
 
 
 			//Update the value of cell
-			/*Gestion_excel.ecrire_cellule(1,2,1,proba_send_packets);
-			Gestion_excel.ecrire_cellule(1,2,2,proba_colisions);*/
-			double[] temp=Calcul.real_cons(Main.nb_stations);
-			Gestion_excel.ecrire_cellule(1,2,1,temp[0]);
-			Gestion_excel.ecrire_cellule(1,2,2,temp[1]);
-			Gestion_excel.ecrire_cellule(1,2,7,(1/temp[0])-1);
+
+
+			double p=Calcul.real_cons(Main.nb_stations)[0];
+			Gestion_excel.ecrire_cellule(1,2,1,p);
+			//Gestion_excel.ecrire_cellule(1,2,7,(1/temp[0])-1);
 
 
 			Gestion_excel.ecrire_cellule(1,2,3,Main.nb_stations_54);
 			Gestion_excel.ecrire_cellule(1,2,4,Main.nb_stations-Main.nb_stations_54);
 
 
-			temp=Calcul.p_collision_54(proba_send_packets, Main.nb_stations-Main.nb_stations_54-1, Main.nb_stations_54,2);
 
+			Gestion_excel.ecrire_cellule(1,10,1,Calcul.p_collision_54(p, Main.nb_stations-Main.nb_stations_54-1, Main.nb_stations_54,2)[1]);
 
-			Gestion_excel.ecrire_cellule(1,10,1,temp[1]);
-			Gestion_excel.ecrire_cellule(1,2,8,temp[0]);
-			Gestion_excel.ecrire_cellule(1,21,1,Calcul.p_collision_54(proba_send_packets, Main.nb_stations-Main.nb_stations_54, Main.nb_stations_54-1,2)[1]);
-			Gestion_excel.ecrire_cellule(1,24,1,Calcul.p_collision_54(proba_send_packets, Main.nb_stations-Main.nb_stations_54, Main.nb_stations_54-1,1)[1]);
+			Gestion_excel.ecrire_cellule(1,21,1,Calcul.p_collision_54(p, Main.nb_stations-Main.nb_stations_54, Main.nb_stations_54-1,2)[1]);
+			Gestion_excel.ecrire_cellule(1,24,1,Calcul.p_collision_54(p, Main.nb_stations-Main.nb_stations_54, Main.nb_stations_54-1,1)[1]);
 
 
 
@@ -730,6 +684,7 @@ public class Main {
 			Gestion_excel.ecrire_cellule(4,9,colum,moyenne_Throughputwooh_54);
 
 			Gestion_excel.ecrire_cellule(4,1,colum,Main.nb_stations);
+			Gestion_excel.ecrire_cellule(4,14,colum,Main.nb_stations);
 
 			Gestion_excel.evaluate();
 
@@ -746,7 +701,6 @@ public class Main {
 		}
 
 		Gestion_excel.close();
-
 
 
 

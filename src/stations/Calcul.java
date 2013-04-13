@@ -180,6 +180,7 @@ public class Calcul {
 
 	}
 
+	
 	public static double[] real_cons(int N){
 
 		double[] toReturn=new double [2];
@@ -187,7 +188,8 @@ public class Calcul {
 		double q=-1;
 		toReturn[0]=p;
 		toReturn[1]=q;
-
+		String s=null;
+		String[] tabs;
 
 		KernelLink ml = null;
 		String[] mathLinkArgs = {"-linkmode", "launch", "-linkname", "C:\\Program Files\\Wolfram Research\\Mathematica\\9.0\\mathkernel"};
@@ -204,21 +206,19 @@ public class Calcul {
 			ml.discardAnswer();
 
 
-			
-
-
-			ml.evaluate("Solve[1 - (1 - p)^" +Integer.toString(N-1)+ "== q && p == 1/((((16/(1 - 2*q)) - 1)*0.5) + 1) && 0<p<1 && 0<q<1, {p, q}, Reals]");
+			ml.evaluate("Solve[1 - (1 - p)^" +Integer.toString(N-1)+ "== q && p == 1/((((16/(1 - 2*q)) - 1)*0.5) + 1) && 0<p<1 && 0<=q<1, {p, q}, Reals]");
 			ml.waitForAnswer();
-			String s=ml.getExpr().toString();
-			String[] tabs= s.split(",");
+			s=ml.getExpr().toString();
+			tabs= s.split(",");
 			if(tabs.length>1){
 
 				p=Double.parseDouble((tabs[1].split("]")[0]));
 				q=Double.parseDouble((tabs[3].split("]")[0]));
-				
+
 			}
 
-
+			toReturn[0]=p;
+			toReturn[1]=q;
 
 		} catch (MathLinkException e) {
 			System.out.println("MathLinkException occurred: " + e.getMessage());
@@ -227,8 +227,7 @@ public class Calcul {
 		}
 
 
-		toReturn[0]=p;
-		toReturn[1]=q;
+
 		return toReturn;
 
 	}

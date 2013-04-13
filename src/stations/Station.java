@@ -144,8 +144,7 @@ public class Station {
 
 			}
 
-			if(Main.data_limited) //si on a mis une limite en nombre de paquets
-				nb_packets--;
+			
 			
 		}
 	}
