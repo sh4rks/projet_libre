@@ -16,7 +16,6 @@ public class Calcul {
 		double time_ack = 0;//56
 
 		double T_PPDU;
-		double t_time;
 		double N_DBPS;
 		double N_PAD=0;
 
@@ -24,7 +23,11 @@ public class Calcul {
 			MPDU= data+(20*8)+(16*8); //header + data
 		else
 			MPDU=14*8;
-		if(debit>=6){
+		if((debit==1) || (debit==2) || (debit==5.5) || (debit==11)){
+
+			T_PPDU=144+48+(MPDU/debit);
+		}
+		else{
 			switch((int)debit){
 			case 6:N_DBPS=24;break;
 			case 9:N_DBPS=36;break;
@@ -43,48 +46,24 @@ public class Calcul {
 			N_PAD = N_Data - (16 + data + 6);
 			T_PPDU=16+4+((16+6+N_PAD+MPDU)/debit);
 		}
-		else{
 
-			T_PPDU=144+48+(MPDU/debit);
-		}
 
 		double transmission_time = T_PPDU;
 		if(!isack){
 			time_ack= calculer_transmission(0, debit, optimized,true)[0];
 			transmission_time+=time_sifs+time_difs+time_ack;
 		}
-		if(optimized && !isack)
-			t_time=Math.min(transmission_time,  Main.time_max_data);
-		else
-			t_time=transmission_time;
 
-		if(t_time == transmission_time){
-			toreturn[0]=transmission_time;
-			toreturn[1]=data;
-			transmission_time-=time_sifs+time_difs+time_ack;
-			toreturn[2]=T_PPDU;
-			toreturn[3]=T_PPDU-data/debit;
 
-		}
-		else{
-			if(debit<6){
-				toreturn[0]=Main.time_max_data;
-				t_time-=time_sifs+time_difs+time_ack;
-				toreturn[2]=t_time;
 
-				toreturn[1]=(t_time-144-48)*debit-(20*8)-(16*8);
-				toreturn[3]=t_time-toreturn[1]/debit;
-			}
-			else{
-				toreturn[0]=Main.time_max_data;
-				t_time-=time_sifs+time_difs+time_ack;
-				toreturn[2]=t_time;
-				toreturn[1]=((t_time-16-4-6)*debit)-16-6-N_PAD-(20*8)-(16*8);
-				toreturn[3]=t_time-toreturn[1]/debit;
+		
+		toreturn[0]=transmission_time;
+		toreturn[1]=data;
+		toreturn[2]=T_PPDU;
+		toreturn[3]=T_PPDU-data/debit;
 
-			}
-
-		}
+		
+		
 
 		return toreturn;
 
@@ -104,7 +83,7 @@ public class Calcul {
 		time_ack= Calcul.calculer_transmission(0, debit, false,true)[0];
 
 
-		if(debit<6){
+		if((debit==1) || (debit==2) || (debit==5.5) || (debit==11)){
 			toreturn[0]=temps_transmission;
 			temps_transmission-=time_sifs+time_difs+time_ack;
 			toreturn[2]=temps_transmission;
@@ -113,6 +92,7 @@ public class Calcul {
 			toreturn[3]=temps_transmission-toreturn[1]/debit;
 		}
 		else{
+			
 			toreturn[0]=temps_transmission;
 			temps_transmission-=time_sifs+time_difs+time_ack;
 			toreturn[2]=temps_transmission;

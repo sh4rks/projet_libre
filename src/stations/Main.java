@@ -17,15 +17,18 @@ public class Main {
 	 **/
 
 
-	private static  double ratio_data_total=1; //1=data only  0=voice_only
+
 	private static   int nb_stations;
 	private static   int nb_stations_54;
-	private static int nb_fragment=12;
+	private static   int nb_stations_36;
+	private static   int nb_stations_11;
+	private static   int nb_stations_1;
+	private static int nb_fragment=10;
+	static double time_max_data = Calcul.calculer_transmission(1500*8.0/nb_fragment,1.0,false,false)[0];
 	private static final int Number_iterations=3;
 	private static  boolean time_limited=true;
 	private static  int duree_limite=1000;
-	public  static int nb_packets_limit=100000;
-	static double time_max_data = Double.MAX_VALUE;
+
 	private static boolean full_optimized=false;
 	public static int colum=3;
 
@@ -47,21 +50,48 @@ public class Main {
 		catch(NumberFormatException e){
 			nb_stations_54=9;
 		}
-		System.out.print("nb stations 1 Mbps? ");
+		System.out.print("nb stations 36 Mbps? ");
 		text = in.readLine();
 		try{
-			int nb_1= Integer.parseInt(text);
-			if (nb_1<0)
-				nb_1=0;
-			nb_stations = nb_stations_54 +nb_1;
+			nb_stations_36= Integer.parseInt(text);
+			if (nb_stations_36<0)
+				nb_stations_36=0;
+
 		}
 		catch(NumberFormatException e){
 
-			nb_stations=nb_stations_54+1;
+			nb_stations_36=0;
+		}
+		System.out.print("nb stations 11 Mbps? ");
+		text = in.readLine();
+		try{
+			nb_stations_11= Integer.parseInt(text);
+			if (nb_stations_11<0)
+				nb_stations_11=0;
+
+		}
+		catch(NumberFormatException e){
+
+			nb_stations_11=0;
+		}
+		System.out.print("nb stations 1 Mbps? ");
+		text = in.readLine();
+		try{
+			nb_stations_1= Integer.parseInt(text);
+			if (nb_stations_1<0)
+				nb_stations_1=0;
+
+		}
+		catch(NumberFormatException e){
+
+			nb_stations_1=1;
 		}
 
-
-		System.out.print("\tduree (secondes)? ");
+		nb_stations = nb_stations_54+nb_stations_36 +nb_stations_11+nb_stations_1;
+		if(nb_stations<1)
+			return;
+		
+		System.out.print("\tduree de simulation (secondes)? ");
 		text = in.readLine();
 		try{
 			duree_limite=Integer.parseInt(text);
@@ -73,54 +103,19 @@ public class Main {
 		}
 
 
-
-		/*System.out.print("nombre de paquets limite (oui ou non)? ");
-		text = in.readLine();
-
-
-		if(text.equals("oui")){
-			data_limited=true;
-			System.out.print("\tnombre de paquets? ");
-			text = in.readLine();
-			try{
-				nb_packets_limit=Integer.parseInt(text);
-				if (nb_packets_limit<0)
-					nb_packets_limit=0;
-			}
-			catch(NumberFormatException e){
-				nb_packets_limit=100000;
-			}
-		}
-		else{
-			data_limited=false;
-		}
-
-		System.out.print("Pourcentage de paquets data de "+ (packet_data_length/8) +" octets [0-100]? ");
+		System.out.print("Temps de transmission (µs) ? ");
 		text = in.readLine();
 		try{
-			ratio_data_total=Integer.parseInt(text)/100.0;
-			if (ratio_data_total<0)
-				ratio_data_total=0;
-			else if (ratio_data_total>1)
-				ratio_data_total=1;
+			time_max_data=Double.parseDouble(text);
+			if (time_max_data<1)
+				time_max_data=Calcul.calculer_transmission(1500*8.0/nb_fragment,1.0,false,false)[0];
 		}
 		catch(NumberFormatException e){
-			ratio_data_total=1;
-		}
-		 */
-		System.out.print("Nombre de fragments pour le paquet de la station ‡ 1Mb/s ? ");
-		text = in.readLine();
-		try{
-			nb_fragment=Integer.parseInt(text);
-			if (nb_fragment<1)
-				nb_fragment=1;
-		}
-		catch(NumberFormatException e){
-			nb_fragment=10;
+			time_max_data=2044;
 		}
 		in.close();
 
-		time_max_data =Calcul.calculer_transmission(1500*8.0/nb_fragment,1.0,false,false)[0];
+
 
 
 
@@ -139,15 +134,16 @@ public class Main {
 		System.out.println();
 		System.out.println("\t"+nb_stations +" stations");
 		System.out.println("\t"+(Math.round(((double)nb_stations_54/(double)nb_stations) * Math.pow(10,4)) / Math.pow(10,2)) +" % des stations en mode 54 Mb/s");
-		System.out.println("\t"+ (Math.round((1-((double)nb_stations_54/(double)nb_stations)) * Math.pow(10,4)) / Math.pow(10,2)) +" % des stations en mode 1 Mb/s");
+		System.out.println("\t"+ (Math.round(((double)nb_stations_36/(double)nb_stations) * Math.pow(10,4)) / Math.pow(10,2)) +" % des stations en mode 36 Mb/s");
+		System.out.println("\t"+ (Math.round(((double)nb_stations_11/(double)nb_stations) * Math.pow(10,4)) / Math.pow(10,2)) +" % des stations en mode 11 Mb/s");
+		System.out.println("\t"+ (Math.round((1-(((double)nb_stations_54+(double)nb_stations_36+(double)nb_stations_11)/(double)nb_stations)) * Math.pow(10,4)) / Math.pow(10,2)) +" % des stations en mode 1 Mb/s");
 		System.out.println();
 		System.out.println("\tTemps limite: "+ (time_limited?"oui":"non"));
 		if(time_limited)
 			System.out.println("\t\tDuree limite: "+ duree_limite +" s");
-		System.out.println("\t"+ratio_data_total*100 +" % des paquets sont des paquets de donnees de taille "+ Station.packet_data_length/8 + " octets");
-		System.out.println("\t"+(Math.round((1-ratio_data_total) * Math.pow(10,4)) / Math.pow(10,2)) +" % des paquets sont des paquets de voix de taille "+ Station.packet_voice_length/8 + " octets");
+
 		System.out.println();
-		System.out.println("\tNombre de fragments: "+nb_fragment);
+		System.out.println("Temps de transmission (µs): "+time_max_data);
 		System.out.println();
 
 
@@ -158,47 +154,75 @@ public class Main {
 
 		ArrayList<Station> stations = new ArrayList<Station>();
 
-		/*for(int i=0;i<nb_stations_54;i++){
+		for(int i=0;i<nb_stations_54;i++){
 
-			stations.add(new Station(54.0,ratio_data_total));
+			stations.add(new Station(54.0));
+
+		}
+		for(int i=0;i<nb_stations_36;i++){
+
+			stations.add(new Station(36.0));
 
 		}
 
+		for(int i=0;i<nb_stations_11;i++){
 
-		for(int i=nb_stations_54;i<nb_stations;i++){
+			stations.add(new Station(11.0));
 
-			stations.add(new Station(1.0,ratio_data_total));
+		}
+		for(int i=0;i<nb_stations_1;i++){
 
-		}*/
+			stations.add(new Station(1.0));
+
+		}
 
 		/*---------------------------------------------------------------------------------------------------------------------*/
 
 
 		/*---------------------------------Simulation--------------------------------------------------------------------------*/
-
-		stations.add(new Station(1.0,ratio_data_total));
-		for (int i=0;i<19;i++){
+		/*	stations.add(new Station(1.0));
+		Main.nb_stations=1;
+		Main.nb_stations_54=0;
+		for (int i=2;i<21;i++){
 
 			//stations.add(new Station(1.0,ratio_data_total));
-			//for (int y=0;y<3;y++)
-			stations.add(new Station(54.0,ratio_data_total));
 
 
-			Main.nb_stations=1+(i+1);
-			Main.nb_stations_54=(i+1);
+			if(i%4==2){
+				stations.add(new Station(1.0));
+				Main.nb_stations+=1;}
+			else if(i%4==0){
+				stations.remove(i-3);
+				Main.nb_stations--;
+				for(int y=0;y<2;y++){
+					stations.add(new Station(54.0));
+					Main.nb_stations++;
+					Main.nb_stations_54++;
+				}
+			}
+			else{
+				stations.add(new Station(54.0));
+				Main.nb_stations+=1;
+				Main.nb_stations_54+=1;
+			}
 
-			simulation(stations,true); // simulation mode optimis√©
-			simulation(stations,false); // simulation mode normal
-			full_optimized=true;
-			simulation(stations,true); // simulation mode optimis√©
-			full_optimized=false;
-			colum++;
 
-		}
+
+		 */
+		simulation(stations,true); // simulation mode optimis√©
+		simulation(stations,false); // simulation mode normal
+		full_optimized=true;
+		simulation(stations,true); // simulation mode optimis√©
+		full_optimized=false;
+		colum++;
+
+
 
 
 	}
+
 	private static void simulation(ArrayList<Station> stations,boolean optimized){
+
 
 
 		double time;  //temps ecoul√© pendant une simulation
@@ -208,9 +232,15 @@ public class Main {
 		double time_1; //temps √©coul√© par les station 1 Mb/s lors d'acces exclusif au canal
 		double data_1;//data transmise par les station 1 Mb/s lors d'acces exclusif au canal
 
+		double time_11; //temps √©coul√© par les station 1 Mb/s lors d'acces exclusif au canal
+		double data_11;//data transmise par les station 1 Mb/s lors d'acces exclusif au canal
 
+		double time_36; //temps √©coul√© par les station 1 Mb/s lors d'acces exclusif au canal
+		double data_36;//data transmise par les station 1 Mb/s lors d'acces exclusif au canal
+		
 		int access_canal_54=0; //nb d'acces exclusif canal (stations 54)
-
+		int access_canal_36=0; //nb d'acces exclusif canal (stations 36)
+		int access_canal_11=0; //nb d'acces exclusif canal (stations 11)
 		int access_canal_1=0; //nb d'acces exclusif canal (stations 1)
 
 		int data_remained;
@@ -224,6 +254,12 @@ public class Main {
 		double moyenne_ratio_data_54 = 0;
 		double moyenne_Throughputwooh_54 = 0;
 		double moyenne_Throughputwoh_54 = 0;
+		double moyenne_ratio_data_36 = 0;
+		double moyenne_Throughputwooh_36 = 0;
+		double moyenne_Throughputwoh_36 = 0;
+		double moyenne_ratio_data_11 = 0;
+		double moyenne_Throughputwooh_11 = 0;
+		double moyenne_Throughputwoh_11 = 0;
 		double moyenne_ratio_data_1 = 0;
 		double moyenne_Throughputwooh_1 = 0;
 		double moyenne_Throughputwoh_1 = 0;
@@ -231,32 +267,32 @@ public class Main {
 
 		double moy_data_54=0;
 		double moy_data_1=0;
-
+		double moy_data_11=0;
+		double moy_data_36=0;
+		
 		double moy_access_canal_54=0;
+		double moy_access_canal_11=0;
 		double moy_access_canal_1=0;
-
+		double moy_access_canal_36=0;
+		
 		double moy_time=0;
 		double moy_time_54=0;
+		double moy_time_11=0;
 		double moy_time_1=0;
+		double moy_time_36=0;
 
-
-		double moy_time_to_send_frames_54=0;
-		double time_to_send_frames_54=0;
-		double moy_time_to_send_frames_1=0;
-		double time_to_send_frames_1=0;
-
+		
 		double time_collision=0;
 		double proba_colisions=0;
 		double proba_send_packets=0;
 		double cwmoy_toprint=0;
-		//int i; 
-		int cpt_54;
-		int cpt_1;
+
 
 		int min_backoff;
 		Station station_emettrice;
 
 		ArrayList<Integer> stations_emettrices=new ArrayList<Integer>();
+
 
 		for (int m=0;m<Number_iterations;m++){     // on simule plusieurs fois.
 
@@ -269,10 +305,16 @@ public class Main {
 			time=0;
 			time_54=0;
 			data_54=0;
+			time_36=0;
+			data_36=0;
 			time_1=0;
 			data_1=0;
+			time_11=0;
+			data_11=0;
 			access_canal_54=0;
+			access_canal_36=0;
 			access_canal_1=0;
+			access_canal_11=0;
 
 			for (int y=0;y<Integer.MAX_VALUE;y++){  
 
@@ -286,18 +328,18 @@ public class Main {
 
 				for (int i=0;i<nb_stations;i++){
 
-					if(stations.get(i).getNb_packets()>0 ){
 
 
-						min_backoff=Math.min(stations.get(i).getBackoff(), min_backoff);
 
-						if(stations.get(i).getBackoff()==0){
+					min_backoff=Math.min(stations.get(i).getBackoff(), min_backoff);
 
-							stations_emettrices.add(i); 
-						}
+					if(stations.get(i).getBackoff()==0){
 
-
+						stations_emettrices.add(i); 
 					}
+
+
+
 				}
 
 
@@ -320,17 +362,16 @@ public class Main {
 
 
 					for (int i=0;i<nb_stations;i++){
-						if(stations.get(i).getNb_packets()>0){
-							stations.get(i).decompter_backoff(min_backoff);
+
+						stations.get(i).decompter_backoff(min_backoff);
 
 
-						}
 					}
 
 
 				}
 
-				if(stations_emettrices.size()==1){ //une seule station veut emettre => elle emet
+				else if(stations_emettrices.size()==1){ //une seule station veut emettre => elle emet
 
 
 
@@ -344,27 +385,26 @@ public class Main {
 
 					/*----------------Calcul du temps pris par la station----------------------*/
 					int data_transmitted=0;
+
 					double[] temp=null;
+
+					double nb_packets=0;
+					nb_packets = ((Calcul.retrouver_data(Main.time_max_data, debit)[1]/8.0)/1500);
 					if(!full_optimized){
-						temp=Calcul.calculer_transmission(data_remained, debit, optimized,false);
-						transmission_time=temp[0];
-						data_transmitted = (int)temp[1];
+						if(!optimized)
+							nb_packets=1;
+						else
+							nb_packets=Math.min(nb_packets, 1.0);
 					}
 					else{
-
-						if(debit==54){
-							data_transmitted=(int)((Calcul.retrouver_data(Main.time_max_data, debit)[1]/8.0)/1500);
-							data_transmitted*=1500*8;
-							temp=Calcul.calculer_transmission(data_transmitted, debit, optimized,false);
-							transmission_time=temp[0];
+						if(nb_packets>1.0){
+							nb_packets = Math.floor(nb_packets);
 						}
-						else{
-							temp=Calcul.calculer_transmission(station_emettrice.getData_remained(), debit, optimized,false);
-							transmission_time=temp[0];
-							data_transmitted = (int)temp[1];
-						}
-
 					}
+					data_transmitted=(int)(nb_packets*8.0*1500);
+					temp=Calcul.calculer_transmission(data_transmitted, debit, optimized,false);
+					transmission_time=temp[0];
+
 
 
 					/*-------------------------------------------------------------------------*/
@@ -379,12 +419,22 @@ public class Main {
 					if(debit==54){
 						access_canal_54++;
 						data_54+=data_transmitted/8.0;
-						time_54+=temp[0]/(1000000.0);
+						time_54+=temp[2]/(1000000.0);
+					}
+					else if(debit==36){
+						access_canal_36++;
+						data_36+=data_transmitted/8.0;
+						time_36+=temp[2]/(1000000.0);
+					}
+					else if(debit==11){
+						access_canal_11++;
+						data_11+=data_transmitted/8.0;
+						time_11+=temp[2]/(1000000.0);
 					}
 					else{
 						access_canal_1++;
 						data_1+=data_transmitted/8.0;
-						time_1+=temp[0]/(1000000.0);
+						time_1+=temp[2]/(1000000.0);
 					}
 
 
@@ -394,7 +444,7 @@ public class Main {
 				}
 
 
-				if(stations_emettrices.size()>1){   // + d'une station veulent emettre => collision
+				else if(stations_emettrices.size()>1){   // + d'une station veulent emettre => collision
 
 					time_collision=0;
 					for (int i=0;i<stations_emettrices.size();i++){  //parmies celles en jeu et qui veulent emetttre
@@ -407,7 +457,25 @@ public class Main {
 
 						double time_collision_temp;
 						debit = station_emettrice.getDebit();
-						if (full_optimized){
+
+						int data_transmitted=0;
+						double nb_packets=0;
+						nb_packets = ((Calcul.retrouver_data(Main.time_max_data, debit)[1]/8.0)/1500);
+						if(!full_optimized){
+							if(!optimized)
+								nb_packets=1;
+							else
+								nb_packets=Math.min(nb_packets, 1.0);
+						}
+						else{
+							if(nb_packets>1.0){
+								nb_packets = Math.floor(nb_packets);
+							}
+						}
+						data_transmitted=(int)(nb_packets*8.0*1500);
+						time_collision_temp=Calcul.calculer_transmission(data_transmitted,debit, optimized,false)[0];
+
+						/*if (full_optimized){
 							if(debit==54){
 								int data_transmitted=(int)((Calcul.retrouver_data(Main.time_max_data, debit)[1]/8.0)/1500);
 								data_transmitted*=1500*8;
@@ -421,7 +489,7 @@ public class Main {
 						}
 						else{
 							time_collision_temp=Calcul.calculer_transmission(station_emettrice.getData_remained(), debit, optimized,false)[0];
-						}
+						}*/
 
 						//time_ack= Main.calculer_transmission(0, station_emettrice.getDebit(), optimized,true)[0];
 
@@ -448,52 +516,41 @@ public class Main {
 
 
 
-			/*----------------------------------Calcul du temps de fin moyen----------------------------------------*/
-			time_to_send_frames_54=0;
-			time_to_send_frames_1=0;
 
-
-			cpt_54=0;
-			cpt_1=0;
-			for (int i=0;i<nb_stations;i++){
-
-				if(stations.get(i).getDebit()==54){
-					cpt_54++;
-
-					time_to_send_frames_54+=stations.get(i).getTime_to_send_frames_54();
-				}
-				if(stations.get(i).getDebit()==1){
-					cpt_1++;
-					time_to_send_frames_1+=stations.get(i).getTime_to_send_frames_1();
-				}
-
-			}		
-
-
-			moy_time_to_send_frames_54+=time_to_send_frames_54/(cpt_54);
-			moy_time_to_send_frames_1+=time_to_send_frames_1/(cpt_1);
-			/*---------------------------------------------------------------------------------------------------------*/
 
 			/*--------------------------------------Calcul pour les statistiques---------------------------------------*/
 			moyenne_Throughputwooh_54+=((data_54*8.0)/time)/(1000000.0); //time_to_send_frames_54
 			moyenne_Throughputwoh_54+=(time_54/time)*54.0;//time_to_send_frames_54
-			moyenne_ratio_data_54+=(data_54/(data_54+data_1));
+			moyenne_ratio_data_54+=(data_54/(data_54+data_36+data_11+data_1));
 
 			moyenne_Throughputwooh_1+=((data_1*8.0)/time)/(1000000.0);//time_to_send_frames_1
 			moyenne_Throughputwoh_1+=(time_1/time);//time_to_send_frames_1
-			moyenne_ratio_data_1+=(data_1/(data_54+data_1));
+			moyenne_ratio_data_1+=(data_1/(data_54+data_36+data_11+data_1));
+
+			moyenne_Throughputwooh_11+=((data_11*8.0)/time)/(1000000.0);//time_to_send_frames_1
+			moyenne_Throughputwoh_11+=(1-0.1666)*(time_11/time)*11 + 0.1666*(time_11/time);//time_to_send_frames_1
+			moyenne_ratio_data_11+=(data_11/(data_54+data_36+data_11+data_1));
+			
+			moyenne_Throughputwooh_36+=((data_36*8.0)/time)/(1000000.0);//time_to_send_frames_1
+			moyenne_Throughputwoh_36+=(time_36/time)*36;//time_to_send_frames_1
+			moyenne_ratio_data_36+=(data_11/(data_54+data_36+data_11+data_1));
 
 
-
-			moy_access_canal_54+=(double)access_canal_54/(double)(access_canal_54+access_canal_1);
-			moy_access_canal_1+=(double)access_canal_1/(double)(access_canal_54+access_canal_1);
+			moy_access_canal_54+=(double)access_canal_54/(double)(access_canal_54+access_canal_36+access_canal_11+access_canal_1);
+			moy_access_canal_11+=(double)access_canal_11/(double)(access_canal_54+access_canal_36+access_canal_11+access_canal_1);
+			moy_access_canal_1+=(double)access_canal_1/(double)(access_canal_54+access_canal_36+access_canal_11+access_canal_1);
+			moy_access_canal_36+=(double)access_canal_36/(double)(access_canal_54+access_canal_36+access_canal_11+access_canal_1);
 
 			moy_data_54+=data_54/(1000000.0);
 			moy_data_1+=data_1/(1000000.0);
+			moy_data_36+=data_36/(1000000.0);
+			moy_data_11+=data_11/(1000000.0);
 
 			moy_time+=time;
 			moy_time_54+=time_54;
 			moy_time_1+=time_1;
+			moy_time_36+=time_36;
+			moy_time_11+=time_11;
 
 			double pr_s = 0;
 			double pr_c=0;
@@ -515,13 +572,14 @@ public class Main {
 		}	
 
 		/*--------------------------------------Calcul pour les statistiques---------------------------------------*/
-		moy_time_to_send_frames_54=(moy_time_to_send_frames_54/Number_iterations);
-		moy_time_to_send_frames_1=(moy_time_to_send_frames_1/Number_iterations);
-		moy_time_to_send_frames_54 = Math.round(moy_time_to_send_frames_54 * Math.pow(10,3)) / Math.pow(10,3);
-		moy_time_to_send_frames_1 = Math.round(moy_time_to_send_frames_1 * Math.pow(10,3)) / Math.pow(10,3);
+
 
 		moy_data_54=(moy_data_54/Number_iterations);
 		moy_data_54 = Math.round(moy_data_54 * Math.pow(10,3)) / Math.pow(10,3);
+		moy_data_11=(moy_data_11/Number_iterations);
+		moy_data_11 = Math.round(moy_data_11 * Math.pow(10,3)) / Math.pow(10,3);
+		moy_data_36=(moy_data_36/Number_iterations);
+		moy_data_36 = Math.round(moy_data_36 * Math.pow(10,3)) / Math.pow(10,3);
 		moy_data_1=(moy_data_1/Number_iterations);
 		moy_data_1 = Math.round(moy_data_1 * Math.pow(10,3)) / Math.pow(10,3);
 
@@ -531,11 +589,17 @@ public class Main {
 		moy_time_54 = Math.round(moy_time_54 * Math.pow(10,3)) / Math.pow(10,3);
 		moy_time_1=(moy_time_1/Number_iterations);
 		moy_time_1 = Math.round(moy_time_1 * Math.pow(10,3)) / Math.pow(10,3);
-
+		moy_time_11=(moy_time_11/Number_iterations);
+		moy_time_11 = Math.round(moy_time_11 * Math.pow(10,3)) / Math.pow(10,3);
+		moy_time_36=(moy_time_36/Number_iterations);
+		moy_time_36 = Math.round(moy_time_36 * Math.pow(10,3)) / Math.pow(10,3);
 
 		moy_access_canal_54=(moy_access_canal_54/Number_iterations)*100;
 		moy_access_canal_54 = Math.round(moy_access_canal_54 * Math.pow(10,3)) / Math.pow(10,3);
-
+		moy_access_canal_11=(moy_access_canal_11/Number_iterations)*100;
+		moy_access_canal_11= Math.round(moy_access_canal_11 * Math.pow(10,3)) / Math.pow(10,3);
+		moy_access_canal_36=(moy_access_canal_36/Number_iterations)*100;
+		moy_access_canal_36= Math.round(moy_access_canal_36 * Math.pow(10,3)) / Math.pow(10,3);
 		moy_access_canal_1=(moy_access_canal_1/Number_iterations)*100;
 		moy_access_canal_1 = Math.round(moy_access_canal_1 * Math.pow(10,3)) / Math.pow(10,3);
 
@@ -548,10 +612,28 @@ public class Main {
 		moyenne_ratio_data_54=(moyenne_ratio_data_54/Number_iterations)*100;
 		moyenne_ratio_data_54 = Math.round(moyenne_ratio_data_54 * Math.pow(10,3)) / Math.pow(10,3);
 
-		moyenne_Throughputwoh_1=(moyenne_Throughputwoh_1/(Number_iterations*(nb_stations-nb_stations_54)));
+		moyenne_Throughputwoh_11=(moyenne_Throughputwoh_11/(Number_iterations*nb_stations_11));
+		moyenne_Throughputwoh_11 = Math.round(moyenne_Throughputwoh_11 * Math.pow(10,3)) / Math.pow(10,3);
+
+		moyenne_Throughputwooh_11=moyenne_Throughputwooh_11/(Number_iterations*nb_stations_11);
+		moyenne_Throughputwooh_11 = Math.round(moyenne_Throughputwooh_11 * Math.pow(10,3)) / Math.pow(10,3);
+
+		moyenne_ratio_data_11=(moyenne_ratio_data_11/Number_iterations)*100;
+		moyenne_ratio_data_11 = Math.round(moyenne_ratio_data_11 * Math.pow(10,3)) / Math.pow(10,3);
+
+		moyenne_Throughputwoh_36=(moyenne_Throughputwoh_36/(Number_iterations*nb_stations_36));
+		moyenne_Throughputwoh_36 = Math.round(moyenne_Throughputwoh_36 * Math.pow(10,3)) / Math.pow(10,3);
+
+		moyenne_Throughputwooh_36=moyenne_Throughputwooh_36/(Number_iterations*nb_stations_36);
+		moyenne_Throughputwooh_36 = Math.round(moyenne_Throughputwooh_36 * Math.pow(10,3)) / Math.pow(10,3);
+
+		moyenne_ratio_data_36=(moyenne_ratio_data_36/Number_iterations)*100;
+		moyenne_ratio_data_36 = Math.round(moyenne_ratio_data_36 * Math.pow(10,3)) / Math.pow(10,3);
+
+		moyenne_Throughputwoh_1=(moyenne_Throughputwoh_1/(Number_iterations*nb_stations_1));
 		moyenne_Throughputwoh_1 = Math.round(moyenne_Throughputwoh_1 * Math.pow(10,3)) / Math.pow(10,3);
 
-		moyenne_Throughputwooh_1=moyenne_Throughputwooh_1/(Number_iterations*(nb_stations-nb_stations_54));
+		moyenne_Throughputwooh_1=moyenne_Throughputwooh_1/(Number_iterations*nb_stations_1);
 		moyenne_Throughputwooh_1 = Math.round(moyenne_Throughputwooh_1 * Math.pow(10,3)) / Math.pow(10,3);
 
 		moyenne_ratio_data_1=(moyenne_ratio_data_1/Number_iterations)*100;
@@ -569,55 +651,70 @@ public class Main {
 
 
 		/*--------------------------------------Affichage r√©sultat---------------------------------------*/
-		/*if (optimized)
-			if(adaptatif)
-				System.out.println("Mode Optimise adaptatif\n");
+		if (optimized){
 
-
-			else if(full_optimized)
+			if(full_optimized)
 				System.out.println("Mode Optimise avec agrÈgation\n");
 			else
 				System.out.println("Mode Optimise\n");
-
+		}
 		else
 			System.out.println("Mode normal\n");
 
 
-			if(Main.nb_stations_54>0){
-				System.out.println("\t les stations 54 Mbps:");
-				System.out.println("\t\tThroughput with overhead : " + moyenne_Throughputwoh_54 +" Mbps");
-				System.out.println("\t\tThroughput without overhead : " + moyenne_Throughputwooh_54 +" Mbps");
-				System.out.println("\t\tData sent: " + moy_data_54 +" MB");
-				System.out.println("\t\tRatio data: " + moyenne_ratio_data_54 +" %");
-				System.out.println("\t\tAcces au canal: "+ moy_access_canal_54 +" %");
-				System.out.println("\t\tTemps ecoule sur le canal a envoyer des donnees (entete comprises, collisions non comprises): "+ moy_time_54 +" s");
-				if(finish_due_to_data)
-					System.out.println("\t\tDuree moyenne au bout de laquelle l'ensemble des paquets ont ete emis par les stations: "+ moy_time_to_send_frames_54 + " s");
-				System.out.println("\t\tTemps total (entete comprises, collisions comprises): "+ moy_time + " s");
-				System.out.println();
-			}
-			if((Main.nb_stations-Main.nb_stations_54)>0){
-				System.out.println("\t les stations 1 Mbps:");
-				System.out.println("\t\tThroughput with overhead  : " + moyenne_Throughputwoh_1 +" Mbps");
-				System.out.println("\t\tThroughput without overhead : " + moyenne_Throughputwooh_1 +" Mbps");
-				System.out.println("\t\tData sent: " + moy_data_1 +" MB");
-				System.out.println("\t\tRatio data: " + moyenne_ratio_data_1 +" %");
-				System.out.println("\t\tAcces au canal: "+ moy_access_canal_1 +" %");
-				System.out.println("\t\tTemps ecoule sur le canal a envoyer des donnees (entete comprises, collisions non comprises): "+ moy_time_1 +" s");
-				if(finish_due_to_data)
-					System.out.println("\t\tDuree moyenne au bout de laquelle l'ensemble des paquets ont ete emis par les stations: "+ moy_time_to_send_frames_1 + " s");
-				System.out.println("\t\tTemps total (entete comprises, collisions comprises): "+ moy_time + " s");
-				System.out.println();
-			}
-			System.out.println("ProbabilitÈ d'Èmission: " + proba_send_packets);
-			System.out.println("ProbabilitÈ de colisions: " + proba_colisions);
-			System.out.println(cwmoy_toprint);
-			System.out.println("\n");
+		if(Main.nb_stations_54>0){
+			System.out.println("\t les stations 54 Mbps:");
+			//System.out.println("\t\tThroughput with overhead : " + moyenne_Throughputwoh_54 +" Mbps");
+			System.out.println("\t\tThroughput without overhead : " + moyenne_Throughputwooh_54 +" Mbps");
+			System.out.println("\t\tData sent: " + moy_data_54 +" MB");
+			System.out.println("\t\tRatio data: " + moyenne_ratio_data_54 +" %");
+			System.out.println("\t\tAcces au canal: "+ moy_access_canal_54 +" %");
+			System.out.println("\t\tTemps ecoule sur le canal a envoyer des donnees (entete comprises, collisions non comprises): "+ moy_time_54 +" s");
+			System.out.println("\t\tTemps total (entete comprises, collisions comprises): "+ moy_time + " s");
+			System.out.println();
+		}
+		if(Main.nb_stations_36>0){
+			System.out.println("\t les stations 36 Mbps:");
+			//System.out.println("\t\tThroughput with overhead  : " + moyenne_Throughputwoh_36 +" Mbps");
+			System.out.println("\t\tThroughput without overhead : " + moyenne_Throughputwooh_36 +" Mbps");
+			System.out.println("\t\tData sent: " + moy_data_36 +" MB");
+			System.out.println("\t\tRatio data: " + moyenne_ratio_data_36 +" %");
+			System.out.println("\t\tAcces au canal: "+ moy_access_canal_36 +" %");
+			System.out.println("\t\tTemps ecoule sur le canal a envoyer des donnees (entete comprises, collisions non comprises): "+ moy_time_36 +" s");
+			System.out.println("\t\tTemps total (entete comprises, collisions comprises): "+ moy_time + " s");
+			System.out.println();
+		}
+		if(Main.nb_stations_11>0){
+			System.out.println("\t les stations 11 Mbps:");
+			//System.out.println("\t\tThroughput with overhead  : " + moyenne_Throughputwoh_11 +" Mbps");
+			System.out.println("\t\tThroughput without overhead : " + moyenne_Throughputwooh_11 +" Mbps");
+			System.out.println("\t\tData sent: " + moy_data_11 +" MB");
+			System.out.println("\t\tRatio data: " + moyenne_ratio_data_11 +" %");
+			System.out.println("\t\tAcces au canal: "+ moy_access_canal_11 +" %");
+			System.out.println("\t\tTemps ecoule sur le canal a envoyer des donnees (entete comprises, collisions non comprises): "+ moy_time_11 +" s");
+			System.out.println("\t\tTemps total (entete comprises, collisions comprises): "+ moy_time + " s");
+			System.out.println();
+		}
+		if(Main.nb_stations_1>0){
+			System.out.println("\t les stations 1 Mbps:");
+			//System.out.println("\t\tThroughput with overhead  : " + moyenne_Throughputwoh_1 +" Mbps");
+			System.out.println("\t\tThroughput without overhead : " + moyenne_Throughputwooh_1 +" Mbps");
+			System.out.println("\t\tData sent: " + moy_data_1 +" MB");
+			System.out.println("\t\tRatio data: " + moyenne_ratio_data_1 +" %");
+			System.out.println("\t\tAcces au canal: "+ moy_access_canal_1 +" %");
+			System.out.println("\t\tTemps ecoule sur le canal a envoyer des donnees (entete comprises, collisions non comprises): "+ moy_time_1 +" s");
+			System.out.println("\t\tTemps total (entete comprises, collisions comprises): "+ moy_time + " s");
+			System.out.println();
+		}
+		System.out.println("ProbabilitÈ d'Èmission: " + proba_send_packets);
+		System.out.println("ProbabilitÈ de colisions: " + proba_colisions);
+		System.out.println(cwmoy_toprint);
+		System.out.println("\n");
 
-		 */ 
+
 		/*---------------------------------------------------------------------------------------------------------*/
 
-		Calcul.initialized_facTab(Main.nb_stations);
+		/*	Calcul.initialized_facTab(Main.nb_stations);
 		double ratio_sta_54 = (double)Main.nb_stations_54/(double)Main.nb_stations;
 
 		Gestion_excel.create("C:\\Users\\Toni\\Dropbox\\RÈseau\\projet libre\\copie.xlsx");
@@ -656,6 +753,8 @@ public class Main {
 
 
 			double p=Calcul.real_cons(Main.nb_stations)[0];
+			if(p==-1)
+				p=proba_send_packets;
 			Gestion_excel.ecrire_cellule(1,2,1,p);
 			//Gestion_excel.ecrire_cellule(1,2,7,(1/temp[0])-1);
 
@@ -704,13 +803,8 @@ public class Main {
 
 
 
-
+		 */
 
 	}
-
-
-
-
 }
-
 
